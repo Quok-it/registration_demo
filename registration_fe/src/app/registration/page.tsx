@@ -9,7 +9,7 @@ export default function RegisterPage() {
           Email
           <input
             type="email"
-            className="border border-gray-300 rounded p-2"
+            className="border border-gray-300 rounded p-2 text-black"
             placeholder="Enter your email"
           />
         </label>
@@ -17,7 +17,7 @@ export default function RegisterPage() {
           Password
           <input
             type="password"
-            className="border border-gray-300 rounded p-2"
+            className="border border-gray-300 rounded p-2 text-black"
             placeholder="Enter your password"
           />
         </label>
