@@ -1,17 +1,47 @@
 'use client'
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    gpuModel: "h100",
-    staticIp: "",
+    networkId: "",
+    providerId: "",
+    location: "",
+    gpu: {
+      name: "H100",
+      ram: 80,
+      gpu_uuid: ""
+    }
   });
+
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    if (name === "gpuModel") {
+      const [gpuName, gpuRam] = value.split("|");
+      setFormData(prevData => ({
+        ...prevData,
+        gpu: {
+          ...prevData.gpu,
+          name: gpuName,
+          ram: parseInt(gpuRam)
+        }
+      }));
+    } else if (name.startsWith("gpu.")) {
+      const gpuField = name.split(".")[1];
+      setFormData(prevData => ({
+        ...prevData,
+        gpu: {
+          ...prevData.gpu,
+          [gpuField]: value
+        }
+      }));
+    } else {
+      setFormData(prevData => ({ ...prevData, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -19,36 +49,55 @@ export default function RegisterPage() {
     const response = await fetch("http://localhost:3001/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({
+        networkId: parseInt(formData.networkId),
+        providerId: parseInt(formData.providerId),
+        location: parseInt(formData.location),
+        gpus: [formData.gpu]
+      }),
     });
     const result = await response.json();
     console.log(result);
-  };
 
+    if (result.success && result.data.status === 0) {
+      router.push(`/gpu-info?data=${encodeURIComponent(JSON.stringify(result.data))}`);
+    }
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4">Register</h1>
+      <h1 className="text-3xl font-bold mb-4">Register GPU Node</h1>
       <form className="flex flex-col gap-4 w-64" onSubmit={handleSubmit}>
         <label className="flex flex-col">
-          Email
+          Network ID
           <input
-            type="email"
-            name="email"
+            type="number"
+            name="networkId"
             className="border border-gray-300 rounded p-2 text-black"
-            placeholder="Enter your email"
-            value={formData.email}
+            placeholder="Enter network ID"
+            value={formData.networkId}
             onChange={handleChange}
           />
         </label>
         <label className="flex flex-col">
-          Password
+          Provider ID
           <input
-            type="password"
-            name="password"
+            type="number"
+            name="providerId"
             className="border border-gray-300 rounded p-2 text-black"
-            placeholder="Enter your password"
-            value={formData.password}
+            placeholder="Enter provider ID"
+            value={formData.providerId}
+            onChange={handleChange}
+          />
+        </label>
+        <label className="flex flex-col">
+          Location
+          <input
+            type="number"
+            name="location"
+            className="border border-gray-300 rounded p-2 text-black"
+            placeholder="Enter location"
+            value={formData.location}
             onChange={handleChange}
           />
         </label>
@@ -57,27 +106,27 @@ export default function RegisterPage() {
           <select
             name="gpuModel"
             className="border border-gray-300 rounded p-2 text-black"
-            value={formData.gpuModel}
+            value={`${formData.gpu.name}|${formData.gpu.ram}`}
             onChange={handleChange}
           >
-            <option value="h100">H100 with 80 GB of RAM</option>
-            <option value="rtx4090">RTX 4090 with 24 GB of RAM</option>
-            <option value="rtx3070">RTX 3070 with 8 GB of RAM</option>
+            <option value="H100|80">H100 with 80 GB of RAM</option>
+            <option value="RTX4090|24">RTX 4090 with 24 GB of RAM</option>
+            <option value="RTX3070|8">RTX 3070 with 8 GB of RAM</option>
           </select>
         </label>
         <label className="flex flex-col">
-          Static IP
+          GPU UUID
           <input
             type="text"
-            name="staticIp"
+            name="gpu.gpu_uuid"
             className="border border-gray-300 rounded p-2 text-black"
-            placeholder="Enter your static IP"
-            value={formData.staticIp}
+            placeholder="Enter GPU UUID"
+            value={formData.gpu.gpu_uuid}
             onChange={handleChange}
           />
         </label>
         <button className="bg-blue-500 text-white px-4 py-2 rounded" type="submit">
-          Submit
+          Register GPU Node
         </button>
       </form>
     </main>
