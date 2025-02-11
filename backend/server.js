@@ -14,7 +14,12 @@ app.get("/", (req, res) => {
 });
 
 // Function to interact with the smart contract
-async function callSmartContractFunction() {
+async function callSmartContractFunction(
+  networkId,
+  providerId,
+  location,
+  gpus
+) {
   const provider = new ethers.JsonRpcProvider(
     "https://evm-rpc-testnet.sei-apis.com"
   );
@@ -307,18 +312,23 @@ async function callSmartContractFunction() {
 
   try {
     console.log("Calling smart contract function");
-    const result = await contract.verifier();
+    const tx = await contract.registerGPU(
+      networkId,
+      providerId,
+      location,
+      gpus
+    );
 
-    if (typeof result.wait === "function") {
+    if (typeof tx.wait === "function") {
       // This is a state-changing transaction
-      console.log("Transaction sent:", result.hash);
-      await result.wait();
-      console.log("Transaction confirmed:", result.hash);
-      return result;
+      console.log("Transaction sent:", tx.hash);
+      await tx.wait();
+      console.log("Transaction confirmed:", tx.hash);
+      return tx;
     } else {
       // This is a view function
-      console.log("Function result:", result);
-      return result;
+      console.log("Function result:", tx);
+      return tx;
     }
   } catch (error) {
     console.error("Error calling smart contract function:", error);
@@ -327,14 +337,18 @@ async function callSmartContractFunction() {
 }
 
 app.post("/register", async (req, res) => {
-  const { email, password, gpuModel, staticIp } = req.body;
+  const { networkId, providerId, location, gpus } = req.body;
   try {
     // Call the smart contract function
-    const tx = await callSmartContractFunction();
-    // const tx = await callSmartContractFunction(email, gpuModel, staticIp);
+    const tx = await callSmartContractFunction(
+      networkId,
+      providerId,
+      location,
+      gpus
+    );
     res.json({
       message: "Registration successful",
-      data: { email, password, gpuModel, staticIp },
+      data: { networkId, providerId, location, gpus },
       transaction: tx,
     });
   } catch (error) {
