@@ -310,29 +310,50 @@ async function callSmartContractFunction(
   ];
   const contract = new ethers.Contract(contractAddress, abi, wallet);
 
-  try {
-    console.log("Calling smart contract function");
-    const tx = await contract.registerGPU(
-      networkId,
-      providerId,
-      location,
-      gpus
-    );
+  console.log("Calling smart contract function");
+  const tx = await contract.registerGPU(networkId, providerId, location, gpus);
 
-    if (typeof tx.wait === "function") {
-      // This is a state-changing transaction
+  if (typeof tx.wait === "function") {
+    try {
       console.log("Transaction sent:", tx.hash);
-      await tx.wait();
+      const receipt = await tx.wait();
       console.log("Transaction confirmed:", tx.hash);
-      return tx;
-    } else {
-      // This is a view function
-      console.log("Function result:", tx);
-      return tx;
+
+      // Find the GPURegistered event in the transaction receipt
+      const gpuRegisteredEvent = receipt.logs.find((log) => {
+        const event = contract.interface.getEvent("GPURegistered");
+        return log.topics[0] === event.topicHash;
+      });
+      if (gpuRegisteredEvent) {
+        console.log("GPURegistered event:", gpuRegisteredEvent);
+
+        const parsedLog = contract.interface.parseLog(gpuRegisteredEvent);
+        const nodeId = parsedLog.args.nodeId;
+        console.log("Node ID from event:", nodeId.toString());
+        // Fetch the node status
+        const nodeStatus = await contract.gpuNodes(nodeId);
+        console.log("Node status:", nodeStatus);
+        const statusAsNumber = nodeStatus[5];
+
+        console.log("Node status:", statusAsNumber);
+
+        return {
+          transaction: tx,
+          nodeId: nodeId,
+          status: statusAsNumber,
+        };
+      } else {
+        console.log("GPURegistered event not found in transaction logs");
+        return tx;
+      }
+    } catch (error) {
+      console.error("Error calling smart contract function:", error);
+      throw error;
     }
-  } catch (error) {
-    console.error("Error calling smart contract function:", error);
-    throw error;
+  } else {
+    // This is a view function
+    console.log("Function result:", tx);
+    return tx;
   }
 }
 
