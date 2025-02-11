@@ -1,3 +1,6 @@
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
 const express = require("express"); // Importing express
 const cors = require("cors"); // Importing cors
 const { ethers } = require("ethers"); // Importing ethers.js
@@ -14,12 +17,7 @@ app.get("/", (req, res) => {
 });
 
 // Function to interact with the smart contract
-async function callSmartContractFunction(
-  networkId,
-  providerId,
-  location,
-  gpus
-) {
+async function callRegisterFunction(networkId, providerId, location, gpus) {
   const provider = new ethers.JsonRpcProvider(
     "https://evm-rpc-testnet.sei-apis.com"
   );
@@ -326,21 +324,40 @@ async function callSmartContractFunction(
       });
       if (gpuRegisteredEvent) {
         console.log("GPURegistered event:", gpuRegisteredEvent);
-
         const parsedLog = contract.interface.parseLog(gpuRegisteredEvent);
         const nodeId = parsedLog.args.nodeId;
-        console.log("Node ID from event:", nodeId.toString());
-        // Fetch the node status
+
+        // Convert all BigInt values to strings when accessing node status
         const nodeStatus = await contract.gpuNodes(nodeId);
-        console.log("Node status:", nodeStatus);
-        const statusAsNumber = nodeStatus[5];
+        const statusAsNumber = Number(nodeStatus[5]); // Convert status to number
 
-        console.log("Node status:", statusAsNumber);
-
-        return {
-          transaction: tx,
-          nodeId: nodeId,
+        console.log("Node status:", {
+          admin: nodeStatus[0],
+          networkId: nodeStatus[1].toString(),
+          providerId: nodeStatus[2].toString(),
+          registrationTime: nodeStatus[3].toString(),
+          location: nodeStatus[4].toString(),
           status: statusAsNumber,
+          verificationOutput: nodeStatus[6],
+          deployedContract: nodeStatus[7],
+        });
+
+        // Return structured data with serialization-friendly values
+        return {
+          transactionHash: tx.hash,
+          nodeId: nodeId.toString(),
+          status: statusAsNumber, // Convert enum to number
+          details: {
+            admin: nodeStatus[0],
+            networkId: nodeStatus[1].toString(),
+            providerId: nodeStatus[2].toString(),
+            registrationTime: new Date(
+              Number(nodeStatus[3]) * 1000
+            ).toISOString(),
+            location: nodeStatus[4].toString(),
+            verificationOutput: nodeStatus[6],
+            deployedContract: nodeStatus[7],
+          },
         };
       } else {
         console.log("GPURegistered event not found in transaction logs");
@@ -356,37 +373,29 @@ async function callSmartContractFunction(
     return tx;
   }
 }
-
 app.post("/register", async (req, res) => {
   const { networkId, providerId, location, gpus } = req.body;
   try {
-    // Call the smart contract function
-    const tx = await callSmartContractFunction(
-      networkId,
-      providerId,
-      location,
+    const result = await callRegisterFunction(
+      networkId.toString(),
+      providerId.toString(),
+      location.toString(),
       gpus
     );
+
     res.json({
-      message: "Registration successful",
-      data: { networkId, providerId, location, gpus },
-      transaction: tx,
+      success: true,
+      message: "GPU node registered successfully",
+      data: result,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Registration failed", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Registration failed",
+      error: error.reason || error.message,
+    });
   }
 });
-// // New registration route
-// app.post("/register", (req, res) => {
-//   const { email, password, gpuModel, staticIp } = req.body;
-//   // Handle registration logic here (e.g. save to DB)
-//   res.json({
-//     message: "Registration successful",
-//     data: { email, password, gpuModel, staticIp },
-//   });
-// });
 
 // Set up the server to listen on port 3000
 const port = 3001;
