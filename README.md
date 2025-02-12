@@ -127,7 +127,7 @@ registration_demo/
         ```
 
 - **POST /register**
-    - Registers a new GPU node on our deployed smart contract.
+    - Registers a new GPU node on our deployed smart contract (0x48baa64bCcDDD1E97BA30C6f1eFFFb01DE4182e5)
     - Example request body:
         ```json
         {
