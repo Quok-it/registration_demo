@@ -16,9 +16,41 @@ let lastChecked = new Date(Date.now()); // Current time in UTC
 // Define the threshold for high memory usage
 const THRESHOLD = 70;
 
-// Function to alert the frontend (you can expand this to use websockets, HTTP calls, etc.)
+// websocket.io setup
+const http = require('http');
+const { Server } = require("socket.io");
+
+// create HTTP server and websocket server
+const server = http.createServer();
+const io = new Server(server, {
+  cors: {
+    origin: "http://54.237.75.116:4567", // config from my prev code
+    methods: ["GET", "POST"]
+  }
+})
+
+// connection to websocket
+io.on("connection", (socket) => {
+  console.log("Frontend connected via websocket!");
+
+  socket.on("disconnect", () => {
+    console.log("Frontend disconnected :(");
+  });
+});
+
+// Function to alert the frontend using websockets
 const sendFrontendAlert = (docs) => {
+  // whenever there is an err, it will show up in the error_log collection
+  // just have the most important info of gpu uuid and error message instead of the entire mongodb
+  const formattedErrors = docs.map((doc) => ({
+    gpu_uuid: doc.gpu_uuid,
+    timestamp: doc.timestamp,
+    error: "High memory usage detected!",
+  }));
+
   console.log("Alert: High fb_util detected", docs);
+  console.log("Sending alert to frontend: ", formattedErrors);
+  io.emit("errors_alert", formattedErrors); // should send real-time updates to the frontend
 };
 
 // Main function that checks for new errors and processes the error log
