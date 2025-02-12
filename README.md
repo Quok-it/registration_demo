@@ -44,7 +44,7 @@ registration_demo/
 
 - Node.js (v14 or higher)
 - npm or yarn
-- A valid Ethereum private key for interacting with the smart contract
+- A valid Sei private key for interacting with the smart contract
 
 ## Installation
 
@@ -169,22 +169,22 @@ registration_demo/
 ## Frontend Pages
 
 - **Home Page (page.tsx)**
-- The landing page of the application.
-- Provides an overview and navigation to other pages.
+  - The landing page of the application.
+  - Provides an overview and navigation to other pages.
 
 - **Login Page (/login)**
-- Allows users to enter a Node ID and check its on-chain status.
-- On pending status, redirects to the GPU Info page with the node data.
-- On verified status, should redirect to their dashboard. 
+  - Allows users to enter a Node ID and check its on-chain status.
+  - On pending status, redirects to the GPU Info page with the node data.
+  - On verified status, should redirect to their dashboard. 
 
 - **GPU Info Page (/gpu-info)**
-- Displays detailed information about the GPU node based on the data passed from the login page.
-- should provide steps for verification
+  - Displays detailed information about the GPU node based on the data passed from the login page.
+  - should provide steps for verification
 
 - **Registration Page (/register)**
-- Allows users to register a new GPU node.
-- Collects necessary information such as network ID, provider ID, location, and GPU details.
-- Submits tx on-chain using admin wallet abstracted from the compute provider
+  - Allows users to register a new GPU node.
+  - Collects necessary information such as network ID, provider ID, location, and GPU details.
+  - Submits tx on-chain using admin wallet abstracted from the compute provider
 
 ## Error Detection Engine Flowchart
 
@@ -235,4 +235,3 @@ graph TD
 15. **Move to Resolved DB**: The engine moves the resolved error to the `resolved_db` collection.
 16. **Continue Monitoring**: The engine continues monitoring for errors.
 
-This flowchart provides a visual representation of the error detection engine's process, making it easier to understand the steps involved in detecting and handling errors.
