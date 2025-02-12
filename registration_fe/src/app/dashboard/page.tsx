@@ -1,26 +1,68 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+// import { useRouter } from "next/navigation";
 import { useGpu } from "@/context/GpuContext";
+import { useWebSocket } from "@/context/WebSocketContext"; // ✅ Import WebSocket Context
 import { Card, CardContent } from "@/components/ui/card";
 import { Gauge } from "@/components/ui/gauge";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
+console.log("Dashboard component is loading...");
+
+// const socket = new WebSocket("ws://localhost:3001");
+
 const Dashboard = () => {
   const { nodeStatus } = useGpu();
-  const router = useRouter();
+  const { ws, isConnected } = useWebSocket(); // ✅ Get WebSocket from context
+  const [gpuErrors, setGpuErrors] = useState([]);
+
+  useEffect(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    console.log("📡 Listening for WebSocket messages...");
+
+    ws.onmessage = (event) => {
+      console.log("📩 Received message:", event.data);
+      try {
+        // ✅ Check if message is valid JSON
+        const jsonStart = event.data.trim().charAt(0);
+        if (jsonStart !== "{" && jsonStart !== "[") {
+          console.warn("⚠️ Received non-JSON message:", event.data);
+          return;
+        }
+
+        const newErrors = JSON.parse(event.data);
+        if (Array.isArray(newErrors)) {
+          const filteredErrors = newErrors.filter((error) =>
+            nodeStatus?.gpus?.some((gpu) => gpu.gpu_uuid === error.gpu_uuid)
+          );
+
+          if (filteredErrors.length > 0) {
+            setGpuErrors((prevErrors) => [...prevErrors, ...filteredErrors]);
+          }
+        }
+      } catch (error) {
+        console.error("❌ JSON Parsing Error:", error);
+      }
+    };
+
+    return () => {
+      console.log("🛑 Stopping WebSocket listener...");
+      ws.onmessage = null;
+    };
+  }, [ws, nodeStatus]);
 
   // Handle loading state
   if (!nodeStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400">
         Loading node data...
-      </div>
+      </div> 
     );
-  }
-
+  }  
+ 
   console.log("Dashboard loaded with node status:", nodeStatus);
 
   // Determine network health based on node status

@@ -11,6 +11,61 @@ const app = express(); // Creating an express app
 app.use(cors()); // Using cors middleware
 app.use(express.json()); // Middleware to parse JSON request bodies
 
+// websocket.io setup
+const http = require('http');
+const { WebSocketServer } = require("ws");
+
+// create HTTP server and websocket server
+const server = http.createServer(app);
+
+const wss = new WebSocketServer({ server });
+
+// connection to websocket
+wss.on("connection", (ws) => {
+  console.log("New WebSocket connection established!");
+
+  ws.on("message", (message) => {
+    console.log("Received message:", message.toString());
+  });
+
+  ws.on("close", () => {
+    console.log("WebSocket client disconnected.");
+  });
+
+  ws.on("error", (err) => {
+    console.error("WebSocket Server Error:", err);
+  });
+
+  ws.send(JSON.stringify({ message: "Hello from WebSocket Server!" }));
+});
+
+// Function to alert the frontend using websockets
+const sendFrontendAlert = (errors) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(errors));
+    }
+  });
+
+  console.log("Sent real-time error alert:", errors);
+};
+
+// API Route to receive errors from `error_engine.js`
+app.post("/send-error-alert", (req, res) => {
+  console.log("Received error alert request:", JSON.stringify(req.body, null, 2));
+
+  const { errors } = req.body;
+
+  if (!errors || errors.length === 0) {
+    return res.status(400).json({ success: false, message: "No errors received" });
+  }
+
+  console.log("Broadcasting error alert via WebSocket:", errors);
+  sendFrontendAlert(errors);
+
+  return res.json({ success: true, message: "Errors broadcasted via WebSocket", errors });
+});
+
 // Create a route that sends a response when visiting the homepage
 app.get("/", (req, res) => {
   res.send("<h1>Hello, Express.js Server!</h1>");
@@ -485,6 +540,9 @@ app.post("/register", async (req, res) => {
 
 // Set up the server to listen on port 3000
 const port = 3001;
-app.listen(port, () => {
+console.log("Starting WebSocket server...");
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+console.log("server.listen() executed!");
+

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GpuProvider } from '@/context/GpuContext';
+import { WebSocketProvider } from "@/context/WebSocketContext";
 
 import "./globals.css";
 
@@ -29,7 +30,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <GpuProvider>{children}</GpuProvider>
+        <GpuProvider>
+          <WebSocketProvider> {/* wrap entire app inside WebSocketProvider */}
+            {children}
+          </WebSocketProvider>
+        </GpuProvider>
       </body>
     </html>
   );

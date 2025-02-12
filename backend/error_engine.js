@@ -1,5 +1,6 @@
 const { MongoClient } = require("mongodb");
 const dotenv = require("dotenv");
+const axios = require("axios");
 
 // Load environment variables from .env file
 dotenv.config();
@@ -15,42 +16,16 @@ let lastChecked = new Date(Date.now()); // Current time in UTC
 
 // Define the threshold for high memory usage
 const THRESHOLD = 70;
+const SERVER_API_URL = "http://localhost:3001/send-error-alert"; // server API endpoint
 
-// websocket.io setup
-const http = require('http');
-const { Server } = require("socket.io");
-
-// create HTTP server and websocket server
-const server = http.createServer();
-const io = new Server(server, {
-  cors: {
-    origin: "http://54.237.75.116:4567", // config from my prev code
-    methods: ["GET", "POST"]
+const sendErrorToServer = async (errors) => {
+  try {
+    console.log("Sending errors to WebSocket server API...");
+    await axios.post(SERVER_API_URL, { errors });
+    console.log("Successfully sent errors to server :)");
+  } catch (error) {
+    console.error("Failed to send errors to server :(", error.message);
   }
-})
-
-// connection to websocket
-io.on("connection", (socket) => {
-  console.log("Frontend connected via websocket!");
-
-  socket.on("disconnect", () => {
-    console.log("Frontend disconnected :(");
-  });
-});
-
-// Function to alert the frontend using websockets
-const sendFrontendAlert = (docs) => {
-  // whenever there is an err, it will show up in the error_log collection
-  // just have the most important info of gpu uuid and error message instead of the entire mongodb
-  const formattedErrors = docs.map((doc) => ({
-    gpu_uuid: doc.gpu_uuid,
-    timestamp: doc.timestamp,
-    error: "High memory usage detected!",
-  }));
-
-  console.log("Alert: High fb_util detected", docs);
-  console.log("Sending alert to frontend: ", formattedErrors);
-  io.emit("errors_alert", formattedErrors); // should send real-time updates to the frontend
 };
 
 // Main function that checks for new errors and processes the error log
@@ -61,6 +36,7 @@ const checkThreshold = async () => {
     );
 
     // 1) Check for new high memory usage in the gpu_polling collection
+    console.log(`[DEBUG] Fetching errors after: ${lastChecked.toISOString()}`);
     const newHighUsageDocs = await global.collection
       .find({
         timestamp: { $gt: lastChecked },
@@ -68,6 +44,7 @@ const checkThreshold = async () => {
       })
       .limit(100)
       .toArray();
+      console.log(`[DEBUG] Found ${newHighUsageDocs.length} new errors.`);
 
     if (newHighUsageDocs.length > 0) {
       console.log(
@@ -80,10 +57,13 @@ const checkThreshold = async () => {
       );
       // This is here to better understand the ordering and output structure of the doc -> will delete eventually
       console.log("Doc first index: ", newHighUsageDocs[0]);
-      console.log("Doc last index: ", newHighUsageDocs[-1]);
+      console.log("Doc last index: ", newHighUsageDocs[newHighUsageDocs.length - 1]);
 
       // Send alert to the frontend
       sendFrontendAlert(newHighUsageDocs);
+
+      // Send errors to backend server API
+      await sendErrorToServer(newHighUsageDocs);
 
       // 1.a) For each new high usage document, log the error in the error_log collection.
       // We assume that each document contains a gpu_uuid field.
