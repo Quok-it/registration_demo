@@ -3,10 +3,11 @@ import React from "react";
 interface TableProps {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void; // Add onClick prop
 }
 
 interface TableCellProps extends TableProps {
-  colSpan?: number; // ✅ Add support for colSpan
+  colSpan?: number; // Add support for colSpan
 }
 
 export const Table: React.FC<TableProps> = ({ children, className }) => (
@@ -14,11 +15,16 @@ export const Table: React.FC<TableProps> = ({ children, className }) => (
 );
 
 export const TableHead: React.FC<TableProps> = ({ children, className }) => (
-  <thead className={`bg-gray-700 text-white ${className}`}>{children}</thead>
+  <thead className={`bg-gray-700 text-white ${className}`}> {children}</thead>
 );
 
-export const TableRow: React.FC<TableProps> = ({ children, className }) => (
-  <tr className={`border-b border-gray-600 ${className}`}>{children}</tr>
+export const TableRow: React.FC<TableProps> = ({ children, className, onClick }) => (
+  <tr 
+    className={`border-b border-gray-600 ${className} ${onClick ? 'cursor-pointer hover:bg-gray-700 transition' : ''}`}
+    onClick={onClick} // Fix: Pass `onClick` to `<tr>`
+  >
+    {children}
+  </tr>
 );
 
 // Fix: Allow TableCell to accept colSpan

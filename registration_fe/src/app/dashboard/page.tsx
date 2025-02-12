@@ -84,7 +84,11 @@ const Dashboard = () => {
               <TableBody>
                 {nodeStatus.gpus.length > 0 ? (
                   nodeStatus.gpus.map((gpu) => (
-                    <TableRow key={gpu.id} className="hover:bg-gray-700 transition">
+                    <TableRow 
+                      key={gpu.id} 
+                      className="hover:bg-gray-700 transition cursor-pointer"
+                      onClick={() => router.push(`/gpu/${gpu.id}`)} // Navigate on click
+                    >
                       <TableCell className="p-3">{gpu.id}</TableCell>
                       <TableCell className="p-3">{gpu.name}</TableCell>
                       <TableCell className="p-3">{gpu.ram}</TableCell>
@@ -106,5 +110,4 @@ const Dashboard = () => {
     </div>
   );
 };
-
 export default Dashboard;
