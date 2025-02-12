@@ -33,6 +33,7 @@ const LoginPage: React.FC = () => {
             <h1>Login</h1>
             <input
                 type="text"
+                className="text-black"
                 placeholder="Enter Node ID"
                 value={nodeId}
                 onChange={(e) => setNodeId(e.target.value)}
