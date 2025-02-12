@@ -16,8 +16,8 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello, Express.js Server!</h1>");
 });
 
-// Function to interact with the smart contract
-async function callRegisterFunction(networkId, providerId, location, gpus) {
+// Function to setup contract connection
+async function setupContractConnection() {
   const provider = new ethers.JsonRpcProvider(
     "https://evm-rpc-testnet.sei-apis.com"
   );
@@ -307,6 +307,12 @@ async function callRegisterFunction(networkId, providerId, location, gpus) {
     },
   ];
   const contract = new ethers.Contract(contractAddress, abi, wallet);
+  return contract;
+}
+
+// Function to interact with the smart contract
+async function callRegisterFunction(networkId, providerId, location, gpus) {
+  const contract = await setupContractConnection();
 
   console.log("Calling smart contract function");
   const tx = await contract.registerGPU(networkId, providerId, location, gpus);
@@ -373,6 +379,50 @@ async function callRegisterFunction(networkId, providerId, location, gpus) {
     return tx;
   }
 }
+// Function to get the status of a GPU node
+async function getNodeStatus(nodeId) {
+  const contract = await setupContractConnection();
+  console.log("Fetching node status for nodeId:", nodeId);
+  try {
+    const nodeStatus = await contract.gpuNodes(nodeId);
+    const statusAsNumber = Number(nodeStatus[5]); // Convert status to number
+
+    return {
+      admin: nodeStatus[0],
+      networkId: nodeStatus[1].toString(),
+      providerId: nodeStatus[2].toString(),
+      registrationTime: new Date(Number(nodeStatus[3]) * 1000).toISOString(),
+      location: nodeStatus[4].toString(),
+      status: statusAsNumber,
+      verificationOutput: nodeStatus[6],
+      deployedContract: nodeStatus[7],
+    };
+  } catch (error) {
+    console.error("Error fetching node status:", error);
+    throw error;
+  }
+}
+
+// Endpoint to get the status of a GPU node (By node ID)
+app.get("/node-status/:nodeId", async (req, res) => {
+  const { nodeId } = req.params;
+  try {
+    const status = await getNodeStatus(nodeId);
+    res.json({
+      success: true,
+      message: "Node status fetched successfully",
+      data: status,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch node status",
+      error: error.reason || error.message,
+    });
+  }
+});
+
+// Endpoint to handle GPU registration
 app.post("/register", async (req, res) => {
   const { networkId, providerId, location, gpus } = req.body;
   try {
