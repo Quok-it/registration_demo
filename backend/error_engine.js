@@ -40,7 +40,7 @@ const checkThreshold = async () => {
     if (newHighUsageDocs.length > 0) {
       console.log(
         "New high fb_util documents found:",
-        // this iterates over each element in the newHighUsageDocs array and returns a new array with just the GPU_UUID and timestamp fields
+        // this iterates over each element in the newHighUsageDocs array and returns a new array with just the gpu_uuid and timestamp fields
         newHighUsageDocs.map((doc) => ({
           gpu_uuid: doc.gpu_uuid,
           timestamp: doc.timestamp,
@@ -54,13 +54,13 @@ const checkThreshold = async () => {
       sendFrontendAlert(newHighUsageDocs);
 
       // 1.a) For each new high usage document, log the error in the error_log collection.
-      // We assume that each document contains a GPU_UUID field.
+      // We assume that each document contains a gpu_uuid field.
       for (const doc of newHighUsageDocs) {
         await global.errorLogCollection.updateOne(
-          { GPU_UUID: doc.GPU_UUID },
+          { gpu_uuid: doc.gpu_uuid },
           {
             $set: {
-              GPU_UUID: doc.GPU_UUID,
+              gpu_uuid: doc.gpu_uuid,
               error: "High fb_util",
               lastOccurrence: doc.timestamp,
               metrics: doc.metrics_measured,
@@ -90,7 +90,7 @@ const checkThreshold = async () => {
           // Check the main collection for any document from the same GPU still reporting high usage.
           const stillHigh = await global.collection.findOne({
             timestamp: { $gt: lastChecked },
-            GPU_UUID: errorDoc.GPU_UUID,
+            gpu_uuid: errorDoc.gpu_uuid,
             "metrics_measured.fb_util": { $gt: THRESHOLD },
           });
 
@@ -104,11 +104,11 @@ const checkThreshold = async () => {
             };
             await global.resolvedCollection.insertOne(resolvedEntry);
             console.log(
-              `Error for GPU_UUID ${errorDoc.GPU_UUID} resolved and moved to resolved_db.`
+              `Error for gpu_uuid ${errorDoc.gpu_uuid} resolved and moved to resolved_db.`
             );
           } else {
             console.log(
-              `Error for GPU_UUID ${errorDoc.GPU_UUID} still present.`
+              `Error for gpu_uuid ${errorDoc.gpu_uuid} still present.`
             );
           }
         }
@@ -133,7 +133,7 @@ const startPolling = async () => {
     console.log("Connected to MongoDB. Starting error detection polling...");
 
     // Poll every 3 seconds
-    setInterval(checkThreshold, 3000);
+    setInterval(checkThreshold, 1000);
   } catch (error) {
     console.error("Error connecting to the database:", error);
   }
