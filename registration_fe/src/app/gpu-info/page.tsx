@@ -96,22 +96,6 @@ const GPUInfoPage = () => {
               <li>Coming Soon...</li>
             </ol>
           </div>
-
-          {/* Error Monitoring */}
-          <div className="bg-red-100 p-6 rounded-lg shadow-inner mt-6">
-            <h2 className="text-2xl font-bold mb-4 text-red-600">Real-Time GPU Errors</h2>
-            {errors.length > 0 ? (
-              errors.map((error, index) => (
-                <div key={index} className="bg-red-500 text-white p-3 my-2 rounded">
-                  <p><strong>GPU UUID:</strong> {error.gpu_uuid}</p>
-                  <p><strong>Error:</strong> {error.error}</p>
-                  <p><strong>Timestamp:</strong> {new Date(error.timestamp).toLocaleString()}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-lg text-gray-800">No GPU errors detected.</p>
-            )}
-          </div>
         </div>
       </div>
     </main>
