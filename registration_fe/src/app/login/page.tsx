@@ -1,28 +1,33 @@
-import React, { useState } from 'react';
-
+'use client'
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 const LoginPage: React.FC = () => {
     const [nodeId, setNodeId] = useState('');
     const [status, setStatus] = useState('');
+    const [gpuData, setGpuData] = useState(null);
+    const router = useRouter();
 
     const handleLogin = async () => {
-        // Replace with actual on-chain status check
-        const onChainStatus = await checkOnChainStatus(nodeId);
-        setStatus(onChainStatus);
+        console.log("Fetching node status for nodeId:", nodeId);
+        const response = await fetch(`http://localhost:3001/node-status/${nodeId}`);
+        const data = await response.json();
+        console.log("Response data:", data);
+        if (data.success) {
+            setStatus(data.data.status === 0 ? 'pending' : 'other'); // Assuming 0 is the pending status
+            setGpuData({ ...data.data, transactionHash: '', nodeId }); // Store the GPU data with transactionHash and nodeId
+            console.log("GPU data set:", { ...data.data, transactionHash: '', nodeId });
+        } else {
+            console.error("Failed to fetch node status:", data.message);
+        }
     };
 
-    const checkOnChainStatus = async (nodeId: string): Promise<string> => {
-        // Simulate an on-chain status check
-        // Replace this with actual logic to check the status on-chain
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve('pending'); // Simulated status
-            }, 1000);
-        });
-    };
-
-    if (status === 'pending') {
-        window.location.href = '/gpu-info';
-    }
+    useEffect(() => {
+        if (status === 'pending' && gpuData) {
+            const queryParams = new URLSearchParams({ data: JSON.stringify(gpuData) }).toString();
+            console.log("Navigating to /gpu-info with query params:", queryParams);
+            router.push(`/gpu-info?${queryParams}`);
+        }
+    }, [status, gpuData, router]);
 
     return (
         <div>

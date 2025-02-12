@@ -9,9 +9,9 @@ export default function Home() {
         <Link href="/registration" className="bg-blue-500 text-white px-4 py-2 rounded">
           Register
         </Link>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded">
+        <Link href= "/login" className="bg-blue-500 text-white px-4 py-2 rounded">
           Login
-        </button>
+          </Link>
       </div>
     </main>
   );

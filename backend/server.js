@@ -385,9 +385,10 @@ async function getNodeStatus(nodeId) {
   console.log("Fetching node status for nodeId:", nodeId);
   try {
     const nodeStatus = await contract.gpuNodes(nodeId);
+    console.log("Raw node status:", nodeStatus);
     const statusAsNumber = Number(nodeStatus[5]); // Convert status to number
 
-    return {
+    const formattedStatus = {
       admin: nodeStatus[0],
       networkId: nodeStatus[1].toString(),
       providerId: nodeStatus[2].toString(),
@@ -397,6 +398,9 @@ async function getNodeStatus(nodeId) {
       verificationOutput: nodeStatus[6],
       deployedContract: nodeStatus[7],
     };
+
+    console.log("Formatted node status:", formattedStatus);
+    return formattedStatus;
   } catch (error) {
     console.error("Error fetching node status:", error);
     throw error;
@@ -406,6 +410,7 @@ async function getNodeStatus(nodeId) {
 // Endpoint to get the status of a GPU node (By node ID)
 app.get("/node-status/:nodeId", async (req, res) => {
   const { nodeId } = req.params;
+  console.log("Received request for node status with nodeId:", nodeId);
   try {
     const status = await getNodeStatus(nodeId);
     res.json({
@@ -414,6 +419,7 @@ app.get("/node-status/:nodeId", async (req, res) => {
       data: status,
     });
   } catch (error) {
+    console.error("Error in /node-status/:nodeId endpoint:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch node status",
