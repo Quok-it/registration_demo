@@ -34,11 +34,12 @@ const LoginPage: React.FC = () => {
             <h1>Login</h1>
             <input
                 type="text"
+                className="text-black"
                 placeholder="Enter Node ID"
                 value={nodeId}
                 onChange={(e) => setNodeId(e.target.value)}
             />
-            <button onClick={handleLogin}>Login</button>
+            <button  className="bg-blue-500 text-white px-4 py-0.25 rounded" onClick={handleLogin}>Login</button>
         </div>
     );
 };
