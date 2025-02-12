@@ -379,15 +379,18 @@ async function callRegisterFunction(networkId, providerId, location, gpus) {
     return tx;
   }
 }
-// Function to get the status of a GPU node
+// Function to get the status of a GPU node and embed GPU details
 async function getNodeStatus(nodeId) {
   const contract = await setupContractConnection();
   console.log("Fetching node status for nodeId:", nodeId);
+
   try {
+    // Fetch node details
     const nodeStatus = await contract.gpuNodes(nodeId);
     console.log("Raw node status:", nodeStatus);
     const statusAsNumber = Number(nodeStatus[5]); // Convert status to number
 
+    // Format node details
     const formattedStatus = {
       admin: nodeStatus[0],
       networkId: nodeStatus[1].toString(),
@@ -399,7 +402,33 @@ async function getNodeStatus(nodeId) {
       deployedContract: nodeStatus[7],
     };
 
-    console.log("Formatted node status:", formattedStatus);
+    // Fetch GPU count for this node
+    const gpuCount = await contract.getGPUCount(nodeId);
+    console.log(`Node ${nodeId} has ${gpuCount.toString()} GPUs`);
+
+    // Fetch details of all GPUs
+    const gpuList = [];
+    for (let i = 0; i < gpuCount; i++) {
+      try {
+        const gpuInfo = await contract.getGPU(nodeId, i);
+        gpuList.push({
+          id: i, // GPU index as ID
+          name: gpuInfo[0],
+          ram: gpuInfo[1].toString(),
+          gpu_uuid: gpuInfo[2],
+        });
+      } catch (gpuError) {
+        console.error(
+          `Error fetching GPU ${i} info for node ${nodeId}:`,
+          gpuError
+        );
+      }
+    }
+
+    // Attach GPU list to response
+    formattedStatus.gpus = gpuList;
+
+    console.log("Formatted node status with GPUs:", formattedStatus);
     return formattedStatus;
   } catch (error) {
     console.error("Error fetching node status:", error);
@@ -407,16 +436,17 @@ async function getNodeStatus(nodeId) {
   }
 }
 
-// Endpoint to get the status of a GPU node (By node ID)
+// Endpoint to get the status of a GPU node (By node ID) with embedded GPU info
 app.get("/node-status/:nodeId", async (req, res) => {
   const { nodeId } = req.params;
   console.log("Received request for node status with nodeId:", nodeId);
+
   try {
     const status = await getNodeStatus(nodeId);
     res.json({
       success: true,
       message: "Node status fetched successfully",
-      data: status,
+      data: status, // Now includes GPU details
     });
   } catch (error) {
     console.error("Error in /node-status/:nodeId endpoint:", error);

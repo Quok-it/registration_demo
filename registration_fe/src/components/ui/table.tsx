@@ -1,8 +1,12 @@
-import React from 'react';
+import React from "react";
 
 interface TableProps {
   children: React.ReactNode;
   className?: string;
+}
+
+interface TableCellProps extends TableProps {
+  colSpan?: number; // ✅ Add support for colSpan
 }
 
 export const Table: React.FC<TableProps> = ({ children, className }) => (
@@ -17,8 +21,11 @@ export const TableRow: React.FC<TableProps> = ({ children, className }) => (
   <tr className={`border-b border-gray-600 ${className}`}>{children}</tr>
 );
 
-export const TableCell: React.FC<TableProps> = ({ children, className }) => (
-  <td className={`p-3 border border-gray-600 ${className}`}>{children}</td>
+// Fix: Allow TableCell to accept colSpan
+export const TableCell: React.FC<TableCellProps> = ({ children, colSpan, className }) => (
+  <td colSpan={colSpan} className={`p-3 border border-gray-600 ${className}`}>
+    {children}
+  </td>
 );
 
 export const TableBody: React.FC<TableProps> = ({ children, className }) => <tbody className={className}>{children}</tbody>;
