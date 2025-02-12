@@ -23,7 +23,7 @@ const LoginPage: React.FC = () => {
                 setNodeStatus(nodeData);
 
                 // ✅ Update status logic
-                setStatus(nodeData.status === 0 ? 'pending' : 'verified');
+                setStatus(nodeData.status === 0 ? 'verified' : 'pending');
                 console.log("Node status updated:", nodeData);
             } else {
                 console.error("Failed to fetch node status:", data.message);
