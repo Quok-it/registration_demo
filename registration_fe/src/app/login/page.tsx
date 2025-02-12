@@ -1,10 +1,11 @@
 'use client'
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useGpu } from '@/context/GpuContext';
 const LoginPage: React.FC = () => {
     const [nodeId, setNodeId] = useState('');
     const [status, setStatus] = useState('');
-    const [gpuData, setGpuData] = useState(null);
+    const { setGpuData } = useGpu(); // Use context
     const router = useRouter();
     
     const handleLogin = async () => {
@@ -21,12 +22,14 @@ const LoginPage: React.FC = () => {
         }
     };
 
-    if (status === 'pending') {
+    useEffect(() => {
+        if (status === 'pending') {
         window.location.href = '/gpu-info';
     } else if (status === 'verified') {
         console.log("Navigating to /dashboard");
         router.push('/dashboard');
     }
+}, [status, router]);
 
     return (
         <div>
