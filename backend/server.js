@@ -393,6 +393,7 @@ async function getNodeStatus(nodeId) {
     // Format node details
     const formattedStatus = {
       admin: nodeStatus[0],
+      nodeId: nodeId.toString(),
       networkId: nodeStatus[1].toString(),
       providerId: nodeStatus[2].toString(),
       registrationTime: new Date(Number(nodeStatus[3]) * 1000).toISOString(),

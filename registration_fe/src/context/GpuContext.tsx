@@ -12,6 +12,7 @@ interface GPU {
 // Define Node type (now includes GPUs)
 interface NodeStatus {
   admin: string;
+  nodeId: string;
   networkId: string;
   providerId: string;
   registrationTime: string;
